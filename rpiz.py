@@ -7,15 +7,11 @@ import ScanUtility
 import bluetooth._bluetooth as bluez
 
 device_info = {
-	"Device": "iBeacon",
-	"UUID": "2f234454-cf6d-4a0f-adf2-f4911ba9ffa6",
-	"Major": 4386,
-	"Minor": 13124,
-	"TxPower": 0xa7, #ask about TxPower, RSSI at 1m is -89
-	"Latitude": None,
-	"Longitude": None,
-	"Name": "MZheng_RPIZ",
-	"Firmware": "0.0.1"
+  "UID": "4386-13124", #major-minor
+	"Name": "Michael Zheng",
+	"Phone": None,
+  "Email": None,
+  "Org": []
 }
 
 cell = [
