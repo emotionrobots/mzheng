@@ -3,14 +3,15 @@ import json
 
 
 def on_message(client, userdata, message):
-    if message.topic == "toServer/info" :
+    if message.topic == "/userRegistration" :
         new_device_info = json.loads(message.payload)
-        device_info_list.append(new_device_info)
-        print(device_info_list) #for testing purposes
-    elif message.topic == "toServer/cell" :
+        #device_info_list.append(new_device_info)
+        print("userRegistraction:") #for testing purposes
+        print(new_device_info)
+    elif message.topic == "/socialContact" :
         new_cell_info = json.loads(message.payload)
-        device_cell_list.append(new_cell_info)
-        print(device_cell_list) #for testing purposes
+        #device_cell_list.append(new_cell_info)
+        print(new_cell_info) #for testing purposes
 
 def get_device_info(major, minor):
     for device in device_info_list:
@@ -27,11 +28,11 @@ def message(uuid, major, minor, message):
 device_info_list = []
 device_cell_list = []
 
-client = paho.Client("emotioneering_beacon_server")
+client = paho.Client("emotioneering_beacon_server_test")
 client.connect("52.43.181.166")
 
-client.subscribe("toServer/info")
-client.subscribe("toServer/cell")
+client.subscribe("/userRegistration")
+client.subscribe("/socialContact")
 client.on_message = on_message
 client.loop_forever()
 
