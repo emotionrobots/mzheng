@@ -203,7 +203,7 @@ class Widget:
   #----------------------------------------------
   def getRoot(self):
     child = self
-    while child.parent is not None:
+    while child.parent is not None:-
       child = child.parent
     return child 
 
