@@ -203,7 +203,7 @@ class Widget:
   #----------------------------------------------
   def getRoot(self):
     child = self
-    while child.parent is not None:-
+    while child.parent is not None:
       child = child.parent
     return child 
 
@@ -901,6 +901,7 @@ class UI(Widget):
     while not self.exitLoop:
       btnPress = self.btnFunc()
       self.dispatch(btnPress)
+      
       time.sleep(0.05)
 
     self.display.endPartial(self.page)
@@ -962,37 +963,38 @@ def onOption3Select(widget):
 #  Long press will invoke the onSelect() method of the widget in focus
 #
 #-----------------------------------------------------------------------------
-def beaconToggle(widget):
-  print("onOption3Select({widget.cname}.{widget.id}) called")
-  if widget.text == " Beacon:\nOn":
-    widget.text = " Beacon:\nOff"
-  else:
-    widget.text = " Beacon:\nOn"
-
 def myBuildUI(ui):
-  qrspace = ui.addRect(pos=[150,0], dim=[100,100], outline=Color.black, fill=Color.white)
-  ui.isSelectable = False
+  #  Blank background
+  blank = ui.addImageBox(pos=[0,30], file="/etc/PiBeacon/pics/emotionlogo.bmp")
 
-  #  Horizontal list box
-  dropList = ui.addDropList(pos=[0,0], dim=[60, 20], text="Option", font=TTFont(15), offset=[0,23],
+  '''
+  listbox = ui.addListBox(pos=[0,0], dim=[60, 25], font=TTFont(15), dir='h',
+               textColor=Color.black, outline=Color.black, fill=Color.white)
+  entry1 = listbox.addEntry(0, "Go")
+  entry2 = listbox.addEntry(1, "Edit")
+  entry3 = listbox.addEntry(2, "Search")
+  entry1.onSelect = onOption3Select 
+  '''
+
+  dropList = ui.addDropList(pos=[0,0], dim=[60, 25], text="Choice", font=TTFont(15),
+                textColor=Color.black, outline=Color.black, fill=Color.white)
+  entry1 = dropList.addEntry(0, "File")
+  entry2 = dropList.addEntry(1, "Edit")
+  entry3 = dropList.addEntry(2, "Search")
+  entry1.onSelect = onOption3Select 
+
+
+  dropList2 = ui.addDropList(pos=[60,0], dim=[60, 25], text="Select", font=TTFont(15),
                   textColor=Color.black, outline=Color.black, fill=Color.white)
+  opt1 = dropList2.addEntry(0, "Option 1")
+  opt2 = dropList2.addEntry(1, "Option 2")
+  opt3 = dropList2.addEntry(2, "Option 3")
 
-  choice1 = dropList.addEntry(0, " Beacon:\nOn")
-  choice1.onSelect = beaconToggle
-
-  choice1.dim = [60,40]
-
-  dropList2 = ui.addDropList(pos=[60,0], dim=[60, 20], text="Select", font=TTFont(15), offset=[0,23],
-                  textColor=Color.black, outline=Color.black, fill=Color.white)
-  select1 = dropList2.addEntry(0, "QR Code")
-  select2 = dropList2.addEntry(1, "Nearby")
-  select3 = dropList2.addEntry(2, "None")
-
-  ticker = ui.addTickerTape(pos=[0, ui.display.height-25], dim=[2, 25], 
-                  text="Go Astros!  Go Rockets!  Go Texasns!  Go Dynamos!  Go Houston!", 
+  ticker = ui.addTickerTape(pos=[0, ui.display.height-25], dim=[2, 25],
+                  text="Go Astros!  Go Rockets!  Go Texasns!  Go Dynamos!  Go Houston!",
                   font=TTFont(20),
-                    textColor=Color.black, outline=Color.white, fill=Color.white)
-  ticker.margin = [2, 2] 
+                  textColor=Color.black, outline=Color.white, fill=Color.white)
+  ticker.margin = [2, 2]
 
   ui.firstFocusId = dropList.id
   return

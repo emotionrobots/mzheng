@@ -71,32 +71,30 @@ def displaySelect3(widget):
   updateDisplayBox(displayBoxItem)
   
 def updateDisplayBox(currentSelect):
-  global qrpath, vbeacon, whiteRectPath, ui
+  global qrpath, vbeacon, whiteRectPath, ui, qrbox
   print("updateDisplayBox called:"+(str)(currentSelect))
   if currentSelect == 1:
     nearbyCount.text = ""
     nearbyCount.dim = [0,0]
     qrspace.file = qrpath
+    qrbox.dim = [0,0]
   elif currentSelect == 2:
     nearbyCount.text = str(len(vbeacon.getNearbyBeacons()))
     nearbyCount.dim = [95,95]
     qrspace.file = whiteRectPath
+    qrbox.dim = [102,102]
     ui.render()
   else:
     nearbyCount.text = ""
     qrspace.file = whiteRectPath
+    qrbox.dim = [102,102]
     #nearbyCount.dim = [0,0]
 
 
 def buildCustomUI(ui):
-  global vbeacon, qrpath, nearbyCount
+  global vbeacon, qrpath, nearbyCount, qrbox
 
-  qrbox = ui.addRect(pos=[150,0], dim=[100,100], outline=Color.black, fill=Color.white)
   qrbox.isSelectable = False
-
-  updateDisplayBox(1)
-
-  
 
   #qrspace = ui.addImageBox(pos=[150,0], file=qrpath) 
   qrspace.isSelectable = False
@@ -104,9 +102,9 @@ def buildCustomUI(ui):
   #nearbyCount = ui.addTextBox(pos=[180,30], dim=[25,25], text="10", font=TTFont(25), outline=Color.white, fill=Color.white)
   nearbyCount.isSelectable = False
   #nearbyCount.text = str(len(vbeacon.getNearbyBeacons()))
-  
 
-  #  Horizontal list box
+  updateDisplayBox(1)
+
   dropList = ui.addDropList(pos=[10,10], dim=[62, 20], text=" Option", font=TTFont(15), offset=[0,20],
                   textColor=Color.black, outline=Color.black, fill=Color.white)
 
@@ -124,15 +122,12 @@ def buildCustomUI(ui):
   select3 = dropList2.addEntry(2, " None")
   select3.onSelect = displaySelect3
   
-  
   ticker = ui.addTickerTape(pos=[0, ui.display.height-25], dim=[2, 25], 
                   text="Go Astros!  Go Rockets!  Go Texasns!  Go Dynamos!  Go Houston!", 
                   font=TTFont(20),
                     textColor=Color.black, outline=Color.white, fill=Color.white)
   ticker.margin = [2, 2] 
   
-  
-
   ui.firstFocusId = dropList.id
   return
 
@@ -190,9 +185,11 @@ ui = UI(paper, pisugar.get_button_press)
 
 displayBoxItem = 1
 
+# various UI elements
 qrpath = "/etc/PiBeacon/pics/emotionlogo.bmp"
-qrspace = ui.addImageBox(pos=[150,0], file=qrpath)
 whiteRectPath = "white100x100.bmp"
+qrspace = ui.addImageBox(pos=[150,0], file=qrpath)
+qrbox = ui.addRect(pos=[149,0], dim=[0,0], outline=Color.white, fill=Color.white)
 
 nearbyCount = ui.addTextBox(pos=[150,0], dim=[0,0], text="", font=TTFont(50), outline=Color.black, fill=Color.white)
 
