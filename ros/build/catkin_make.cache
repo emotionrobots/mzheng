@@ -1,0 +1,2 @@
+espros_tof_cam635:img_proc
+-DCATKIN_DEVEL_PREFIX=/home/ubuntu/Software/ros/devel -DCMAKE_INSTALL_PREFIX=/home/ubuntu/Software/ros/install -G Unix Makefiles

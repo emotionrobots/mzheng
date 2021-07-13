@@ -1,0 +1,12 @@
+Achieved:
+Looked over code and gained a good idea of how it functions
+
+TODO:
+Set up own code to extract the foreground
+Create mask w/ applitude and apply it to depth image
+Use open morph or other morph stuff to pinpoint markers
+watershed 
+
+Reminder:
+made edits to origial code
+backup of og in backup
