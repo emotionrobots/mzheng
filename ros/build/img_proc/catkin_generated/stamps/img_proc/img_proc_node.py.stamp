@@ -139,6 +139,17 @@ class ImgProcNode(object):
     # Support ROS message to CV image conversion 
     self.br = CvBridge()
 
+    #mask covering the background
+    self.bgmask = None
+    self.aimg1 = None
+
+    # Background learning params
+    self.learningRateMax = .0001
+    self.learningRateAlpha = .0001
+
+    #OpenCV Background Subtractor
+    self.bgSubtractor = cv2.createBackgroundSubtractorMOG2(varThreshold = 2, detectShadows = False)
+
     # Subscribe to camera data 
     rospy.Subscriber('/espros_tof_cam635/camera/image_raw1', Image, self.amp_callback)
     rospy.Subscriber('/espros_tof_cam635/camera/image_raw2', Image, self.depth_callback)
@@ -186,9 +197,14 @@ class ImgProcNode(object):
   #===================================================
   def prepare(self, img, scale):
     img = self.scaleImage(img, scale)
-    img = 4*cv2.normalize(img, None, 0, 65535 , cv2.NORM_MINMAX, cv2.CV_16U)
+    img = cv2.normalize(img, None, 0, 65535 , cv2.NORM_MINMAX, cv2.CV_16U)
     img = cv2.medianBlur(img, 5)
-    return img
+    h,w = img.shape[:2]
+    center = (w / 2, h / 2)
+    #print(center)
+    M = cv2.getRotationMatrix2D(center, 180, 1.0)
+    rotated180 = cv2.warpAffine(img, M, (w, h))
+    return rotated180
 
   #===================================================
   #  Process camera amp image
@@ -214,18 +230,55 @@ class ImgProcNode(object):
     return
 
   #===================================================
-  #  Periodic call to publish data 
+  # Remove noise with morphology opening
+  #===================================================
+  def morph_clean(self, bimg):
+    kernel = cv2.getStructuringElement(shape=cv2.MORPH_RECT, ksize=(5,5))
+    out = cv2.morphologyEx(bimg, cv2.MORPH_OPEN, kernel) 
+    return out
+
+  #===================================================
+  #  Compute learningRate based on movement
+  #===================================================
+  def computeLearningRate(self, diff):
+    lr = 0
+    alpha = self.learningRateAlpha
+    lrMax = self.learningRateMax
+    if diff < 96:
+    	eta = diff / 9600.0
+    	lr = alpha / (eta + alpha/lrMax)
+    return lr
+
+  #===================================================
+  #  Generate Mask Covering Background
+  #===================================================
+  def getBgMask(self, aimg):
+    if aimg is not None:
+      if self.bgmask is None:
+        learningRate = 0.001
+        self.aimg1 = aimg
+      else:
+        abs_diff = np.sum(cv2.absdiff(self.aimg1, aimg))/255.0
+        learningRate = self.computeLearningRate(abs_diff)
+      self.bgmask = self.bgSubtractor.apply(aimg, learningRate)
+      self.bgmask = cv2.compare(self.bgmask, 0, cv2.CMP_GT)
+      self.bgmask = self.morph_clean(self.bgmask)
+    return self.bgmask
+
+  #===================================================
+  #  Periodic call to refresh image and compute fgf&bg and such
   #===================================================
   def periodic(self):
     dimg = self.camera['depth']
     aimg = self.camera['amp']
     zpoints = self.camera['z']
     
-    #print("debug===========")
-    #print(aimg)
-    testAimg = cv2.bitwise_and(aimg,aimg)
+    backgroundMask = self.getBgMask(aimg)
+    foreground = cv2.bitwise_and(aimg, aimg, mask = backgroundMask)
+
     if zpoints is not None:
-      cv2.imshow('aimg',self.prepare(testAimg,4))
+      cv2.imshow('aimg',self.prepare(aimg,4))
+      cv2.imshow('foreground',self.prepare(foreground,4))
 
 
   #===================================================

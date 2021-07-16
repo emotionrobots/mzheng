@@ -9,7 +9,7 @@ Reads and maintains the following parameters on the ROS server
 - \b "~trigger_single_shot" : \b [bool] Single image acquisition min: False, default: False, max: True
 - \b "~hdr" : \b [int] HDR mode min: 0, default: 0, max: 2
 - \b "~automatic_integration_time" : \b [bool] Automatic integration time min: False, default: True, max: True
-- \b "~integration_time_0" : \b [int] Integration time TOF for beam A [uS] min: 0, default: 800, max: 1000
+- \b "~integration_time_0" : \b [int] Integration time TOF for beam A [uS] min: 0, default: 500, max: 1000
 - \b "~integration_time_1" : \b [int] Integration time TOF for beam A [uS] min: 0, default: 0, max: 1000
 - \b "~integration_time_2" : \b [int] Integration time TOF for beam A [uS] min: 0, default: 0, max: 1000
 - \b "~integration_time_3" : \b [int] Integration time TOF for beam A [uS] min: 0, default: 0, max: 1000

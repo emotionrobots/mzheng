@@ -501,7 +501,7 @@ class ImgProcNode(object):
     #cv2.imshow("test", self.prepare(depthFgnd, 4))
 
     if zpoints is not None:
-      cv2.imshow("foreground", self.prepare(depthFgnd, 4))
+      #cv2.imshow("foreground", self.prepare(depthFgnd, 4))
       
       
       blobs = self.getBlobs(depthFgndMask, dimg)
