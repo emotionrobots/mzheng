@@ -10,3 +10,13 @@ watershed
 Reminder:
 made edits to origial code
 backup of og in backup
+
+7/13
+Finally got video feed to work!!!!
+TODO:
+apply masks and such so its only the new objects/ppl heads etc 
+just follow the og code
+probably need to clean up the image a bit
+apply a mask 
+do openings and morphs and stuff
+marker -> watershed
