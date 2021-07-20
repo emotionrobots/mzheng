@@ -1,4 +1,4 @@
-prefix=/home/ubuntu/Software/ros/install
+prefix=/home/ubuntu/Software/mzheng/ros/install
 
 Name: img_proc
 Description: Description of img_proc

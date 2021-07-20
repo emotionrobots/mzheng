@@ -7,4 +7,5 @@
 # new environment variables
 
 # modified environment variables
-export PWD='/home/ubuntu/Software/ros/build'
+export PWD='/home/ubuntu/Software/mzheng/ros/build'
+export ROS_PACKAGE_PATH='/home/ubuntu/Software/ros/src:/home/ubuntu/Software/ros/src:/home/ubuntu/Software/mzheng/ros/src:/opt/ros/noetic/share'

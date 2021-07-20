@@ -277,6 +277,7 @@ class ImgProcNode(object):
     foreground = cv2.bitwise_and(aimg, aimg, mask = backgroundMask)
 
     if zpoints is not None:
+      
       cv2.imshow('aimg',self.prepare(aimg,4))
       cv2.imshow('foreground',self.prepare(foreground,4))
 
