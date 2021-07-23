@@ -43,10 +43,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/ubuntu/Software/ros/src
+CMAKE_SOURCE_DIR = /home/ubuntu/Software/mzheng/ros/src
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/ubuntu/Software/ros/build
+CMAKE_BINARY_DIR = /home/ubuntu/Software/mzheng/ros/build
 
 # Utility rule file for std_msgs_generate_messages_py.
 
@@ -63,10 +63,10 @@ img_proc/CMakeFiles/std_msgs_generate_messages_py.dir/build: std_msgs_generate_m
 .PHONY : img_proc/CMakeFiles/std_msgs_generate_messages_py.dir/build
 
 img_proc/CMakeFiles/std_msgs_generate_messages_py.dir/clean:
-	cd /home/ubuntu/Software/ros/build/img_proc && $(CMAKE_COMMAND) -P CMakeFiles/std_msgs_generate_messages_py.dir/cmake_clean.cmake
+	cd /home/ubuntu/Software/mzheng/ros/build/img_proc && $(CMAKE_COMMAND) -P CMakeFiles/std_msgs_generate_messages_py.dir/cmake_clean.cmake
 .PHONY : img_proc/CMakeFiles/std_msgs_generate_messages_py.dir/clean
 
 img_proc/CMakeFiles/std_msgs_generate_messages_py.dir/depend:
-	cd /home/ubuntu/Software/ros/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/ubuntu/Software/ros/src /home/ubuntu/Software/ros/src/img_proc /home/ubuntu/Software/ros/build /home/ubuntu/Software/ros/build/img_proc /home/ubuntu/Software/ros/build/img_proc/CMakeFiles/std_msgs_generate_messages_py.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/ubuntu/Software/mzheng/ros/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/ubuntu/Software/mzheng/ros/src /home/ubuntu/Software/mzheng/ros/src/img_proc /home/ubuntu/Software/mzheng/ros/build /home/ubuntu/Software/mzheng/ros/build/img_proc /home/ubuntu/Software/mzheng/ros/build/img_proc/CMakeFiles/std_msgs_generate_messages_py.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : img_proc/CMakeFiles/std_msgs_generate_messages_py.dir/depend
 

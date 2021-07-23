@@ -39,7 +39,6 @@ import tf2_ros
 import tf2_py as tf2
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 import paho.mqtt.client as mqtt
-from BlobTracker import BlobTracker
 
 node = None
 client = mqtt.Client()
@@ -144,8 +143,8 @@ class ImgProcNode(object):
     self.aimg1 = None
 
     # Background learning params
-    self.learningRateMax = .0001
-    self.learningRateAlpha = .0001
+    self.learningRateMax = .00001
+    self.learningRateAlpha = .00001
 
     #OpenCV Background Subtractor
     self.bgSubtractor = cv2.createBackgroundSubtractorMOG2(varThreshold = 2, detectShadows = False)
@@ -182,31 +181,6 @@ class ImgProcNode(object):
     return 
 
   #===================================================
-  # Scale image 
-  #===================================================
-  def scaleImage(self, img, factor):
-    w = int(img.shape[1] * factor)
-    h = int(img.shape[0] * factor)
-    dim = (w, h)
-    newImg = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
-    return newImg
-
-  #===================================================
-  # Prepare array for display by scaling and 
-  # normalizing, and filtering
-  #===================================================
-  def prepare(self, img, scale):
-    img = self.scaleImage(img, scale)
-    img = cv2.normalize(img, None, 0, 65535 , cv2.NORM_MINMAX, cv2.CV_16U)
-    img = cv2.medianBlur(img, 5)
-    h,w = img.shape[:2]
-    center = (w / 2, h / 2)
-    #print(center)
-    M = cv2.getRotationMatrix2D(center, 180, 1.0)
-    rotated180 = cv2.warpAffine(img, M, (w, h))
-    return rotated180
-
-  #===================================================
   #  Process camera amp image
   #===================================================
   def amp_callback(self, msg):
@@ -229,13 +203,40 @@ class ImgProcNode(object):
     self.getXYZArrays(msg)
     return
 
+ #===================================================
+  # Scale image 
+  #===================================================
+  def scaleImage(self, img, factor):
+    w = int(img.shape[1] * factor)
+    h = int(img.shape[0] * factor)
+    dim = (w, h)
+    newImg = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
+    return newImg
+
+  #===================================================
+  # Prepare array for display by scaling and 
+  # normalizing, and filtering
+  #===================================================
+  def prepare(self, img, scale):
+    img = self.scaleImage(img, scale)
+    img = cv2.normalize(img, None, 0, 65535 , cv2.NORM_MINMAX, cv2.CV_16U)
+    #img = cv2.medianBlur(img, 5)
+    h,w = img.shape[:2]
+    center = (w / 2, h / 2)
+    #print(center)
+    M = cv2.getRotationMatrix2D(center, 180, 1.0)
+    rotated180 = cv2.warpAffine(img, M, (w, h))
+    return rotated180*2
+
   #===================================================
   # Remove noise with morphology opening
   #===================================================
   def morph_clean(self, bimg):
-    kernel = cv2.getStructuringElement(shape=cv2.MORPH_RECT, ksize=(5,5))
-    out = cv2.morphologyEx(bimg, cv2.MORPH_OPEN, kernel) 
-    return out
+    kernel = cv2.getStructuringElement(shape=cv2.MORPH_RECT, ksize=(3,3))
+    open = cv2.morphologyEx(bimg, cv2.MORPH_OPEN, kernel, iterations=1) 
+    kernel_erode = np.ones((5,5),np.uint8)
+    erosion = cv2.erode(open,kernel_erode,iterations=1)
+    return open
 
   #===================================================
   #  Compute learningRate based on movement
@@ -266,7 +267,17 @@ class ImgProcNode(object):
     return self.bgmask
 
   #===================================================
-  #  Periodic call to refresh image and compute fgf&bg and such
+  #  performs distance transform
+  #===================================================
+  def segmentation(self, img):
+    img = img.astype('uint8')
+    # Perform the distance transform algorithm
+    dist = cv2.distanceTransform(img, cv2.DIST_L2, 3)
+    cv2.normalize(dist, dist, 0, 1.0, cv2.NORM_MINMAX)
+    cv2.imshow('Distance Transform Image', self.prepare(dist,4))
+
+  #===================================================
+  #  Periodic call to refresh image and compute fg&bg and such
   #===================================================
   def periodic(self):
     dimg = self.camera['depth']
@@ -275,11 +286,15 @@ class ImgProcNode(object):
     
     backgroundMask = self.getBgMask(aimg)
     foreground = cv2.bitwise_and(aimg, aimg, mask = backgroundMask)
+    ret,foreThresh = cv2.threshold(foreground,0,255,cv2.THRESH_BINARY)
+    #print(foreThresh)
 
     if zpoints is not None:
       
-      cv2.imshow('aimg',self.prepare(aimg,4))
       cv2.imshow('foreground',self.prepare(foreground,4))
+      #cv2.imshow('background',self.prepare(backgroundMask,4))
+      cv2.imshow('threshold', self.prepare(foreThresh,4))
+      self.segmentation(foreThresh)
 
 
   #===================================================

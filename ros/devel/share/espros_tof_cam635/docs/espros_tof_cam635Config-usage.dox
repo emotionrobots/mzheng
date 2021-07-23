@@ -7,7 +7,7 @@
   <param name="start_stream" type="bool" value="True" />
   <param name="trigger_single_shot" type="bool" value="False" />
   <param name="hdr" type="int" value="0" />
-  <param name="automatic_integration_time" type="bool" value="True" />
+  <param name="automatic_integration_time" type="bool" value="False" />
   <param name="integration_time_0" type="int" value="500" />
   <param name="integration_time_1" type="int" value="0" />
   <param name="integration_time_2" type="int" value="0" />
