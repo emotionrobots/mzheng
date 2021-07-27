@@ -256,7 +256,7 @@ class ImgProcNode(object):
   def getBgMask(self, aimg):
     if aimg is not None:
       if self.bgmask is None:
-        learningRate = 0.001
+        learningRate = 0.0001
         self.aimg1 = aimg
       else:
         abs_diff = np.sum(cv2.absdiff(self.aimg1, aimg))/255.0
@@ -271,10 +271,23 @@ class ImgProcNode(object):
   #===================================================
   def segmentation(self, img):
     img = img.astype('uint8')
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(9,9))
+    open = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel, iterations=1)
+    cv2.imshow('circle open1', self.prepare(open,4))
+    open = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel, iterations=2)
+    cv2.imshow('circle open2', self.prepare(open,4))
+    '''
+    contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    cv2.drawContours(img, contours, -1, (0,255,0), 3)
+    '''
     # Perform the distance transform algorithm
+    '''
     dist = cv2.distanceTransform(img, cv2.DIST_L2, 3)
-    cv2.normalize(dist, dist, 0, 1.0, cv2.NORM_MINMAX)
-    cv2.imshow('Distance Transform Image', self.prepare(dist,4))
+    ret, sure_fg = cv2.threshold(dist,0.7*dist.max(),255,0)
+    #cv2.normalize(dist, dist, 0, 1.0, cv2.NORM_MINMAX)
+    cv2.imshow('Distance Transform Image', self.prepare(sure_fg,4))
+    '''
+    #return open
 
   #===================================================
   #  Periodic call to refresh image and compute fg&bg and such
@@ -287,14 +300,26 @@ class ImgProcNode(object):
     backgroundMask = self.getBgMask(aimg)
     foreground = cv2.bitwise_and(aimg, aimg, mask = backgroundMask)
     ret,foreThresh = cv2.threshold(foreground,0,255,cv2.THRESH_BINARY)
+    
     #print(foreThresh)
 
     if zpoints is not None:
       
-      cv2.imshow('foreground',self.prepare(foreground,4))
+      cv2.imshow('aimg',self.prepare(aimg,4))
+      cv2.imshow('dimg',self.prepare(dimg,4))
+      dimg2 = (dimg/256).astype('uint8')
+      ret,depthThresh = cv2.threshold(dimg2,127,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
+      cv2.imshow('depthThresh', self.prepare(depthThresh,4))
+
+      metersTo8bit = lambda x: int((255/2)*(x-2))
+      metersTo8bit2 = np.vectorize(metersTo8bit)
+      print(zpoints)
+      #zpoint2 = metersTo8bit2(zpoints[:])
+      #cv2.imshow('zpoint', zpoint2)
+      #cv2.imshow('foreground',self.prepare(foreground,4))
       #cv2.imshow('background',self.prepare(backgroundMask,4))
-      cv2.imshow('threshold', self.prepare(foreThresh,4))
-      self.segmentation(foreThresh)
+      #cv2.imshow('threshold', self.prepare(foreThresh,4))
+      #self.segmentation(foreThresh)
 
 
   #===================================================
