@@ -25,6 +25,7 @@ import rospy
 import cv2
 import math
 import json 
+import os
 from datetime import datetime
 import queue
 import numpy as np
@@ -234,8 +235,11 @@ class ImgProcNode(object):
   def morph_clean(self, bimg):
     kernel = cv2.getStructuringElement(shape=cv2.MORPH_RECT, ksize=(3,3))
     open = cv2.morphologyEx(bimg, cv2.MORPH_OPEN, kernel, iterations=1) 
+    open = cv2.dilate(open, kernel)
+    '''
     kernel_erode = np.ones((5,5),np.uint8)
     erosion = cv2.erode(open,kernel_erode,iterations=1)
+    '''
     return open
 
   #===================================================
@@ -274,20 +278,25 @@ class ImgProcNode(object):
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(9,9))
     open = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel, iterations=1)
     cv2.imshow('circle open1', self.prepare(open,4))
-    open = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel, iterations=2)
-    cv2.imshow('circle open2', self.prepare(open,4))
-    '''
-    contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    cv2.drawContours(img, contours, -1, (0,255,0), 3)
-    '''
-    # Perform the distance transform algorithm
-    '''
-    dist = cv2.distanceTransform(img, cv2.DIST_L2, 3)
-    ret, sure_fg = cv2.threshold(dist,0.7*dist.max(),255,0)
+    
+    dist = cv2.distanceTransform(open, cv2.DIST_L2, 3)
+    cv2.imshow('Distance Transform Image', self.prepare(dist,4))
+    ret, sure_fg = cv2.threshold(dist,0.8*dist.max(),255,0)
     #cv2.normalize(dist, dist, 0, 1.0, cv2.NORM_MINMAX)
-    cv2.imshow('Distance Transform Image', self.prepare(sure_fg,4))
-    '''
+    cv2.imshow('Distance Transform Image - thresh', self.prepare(sure_fg,4))
+    
     #return open
+
+  #===================================================
+  #  performs distance transform
+  #===================================================
+  def zpointNormalize(self, pixelValue):
+    x = int((255/(-2)*(pixelValue-2)))
+    if x>255: 
+      x=255
+    if x<0: 
+      x=0
+    return x
 
   #===================================================
   #  Periodic call to refresh image and compute fg&bg and such
@@ -304,23 +313,29 @@ class ImgProcNode(object):
     #print(foreThresh)
 
     if zpoints is not None:
-      
+      '''
       cv2.imshow('aimg',self.prepare(aimg,4))
       cv2.imshow('dimg',self.prepare(dimg,4))
       dimg2 = (dimg/256).astype('uint8')
-      ret,depthThresh = cv2.threshold(dimg2,127,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
-      cv2.imshow('depthThresh', self.prepare(depthThresh,4))
+      ret,depthThresh = cv2.threshold(dimg2,127,255,cv2.THRESH_BINARY)
+      '''
 
-      metersTo8bit = lambda x: int((255/2)*(x-2))
-      metersTo8bit2 = np.vectorize(metersTo8bit)
-      print(zpoints) #if value is nan that means not eno exposure so prob eliminate that first
-      #zpoint2 = metersTo8bit2(zpoints[:])
-      #cv2.imshow('zpoint', zpoint2)
-      #cv2.imshow('foreground',self.prepare(foreground,4))
+      metersTo8bit = np.vectorize(self.zpointNormalize)
+      zpoint = metersTo8bit(zpoints[:]).astype('uint8')
+      cv2.imshow('zpoint', self.prepare(zpoint,4))
+      ret, zpointThresh = cv2.threshold(zpoint, 10, 255, cv2.THRESH_BINARY)
+      #zpointThresh = self.morph_clean(zpointThresh)
+      foreground = cv2.bitwise_and(zpointThresh, zpointThresh, mask = backgroundMask)
+      foreground = self.morph_clean(foreground)
+      #cv2.imshow('zpointThresh', self.prepare(zpointThresh,4))
+      cv2.imshow('foreground', self.prepare(foreground,4))
+
+      self.segmentation(foreground)
+
       #cv2.imshow('background',self.prepare(backgroundMask,4))
       #cv2.imshow('threshold', self.prepare(foreThresh,4))
       #self.segmentation(foreThresh)
-
+      
 
   #===================================================
   #  Start processing 

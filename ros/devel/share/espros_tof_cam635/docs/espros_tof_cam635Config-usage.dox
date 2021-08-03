@@ -23,7 +23,7 @@
   <param name="temporal_filter_threshold_NFOV" type="int" value="300" />
   <param name="spatial_average_filter" type="bool" value="False" />
   <param name="spatial_median_filter" type="bool" value="False" />
-  <param name="min_amplitude_0" type="int" value="10" />
+  <param name="min_amplitude_0" type="int" value="0" />
   <param name="min_amplitude_1" type="int" value="100" />
   <param name="min_amplitude_2" type="int" value="200" />
   <param name="min_amplitude_3" type="int" value="500" />

@@ -1,22 +1,3 @@
-Achieved:
-Looked over code and gained a good idea of how it functions
+Achieved: now able to reliably(?) find potential watershed marker
 
-TODO:
-Set up own code to extract the foreground
-Create mask w/ applitude and apply it to depth image
-Use open morph or other morph stuff to pinpoint markers
-watershed 
-
-Reminder:
-made edits to origial code
-backup of og in backup
-
-7/13
-Finally got video feed to work!!!!
-TODO:
-apply masks and such so its only the new objects/ppl heads etc 
-just follow the og code
-probably need to clean up the image a bit
-apply a mask 
-do openings and morphs and stuff
-marker -> watershed
+TODO: apply watershed and figure out what picture to pass in and all the inbetweens

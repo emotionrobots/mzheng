@@ -24,7 +24,7 @@ Reads and maintains the following parameters on the ROS server
 - \b "~temporal_filter_threshold_NFOV" : \b [int] Kalman spot filter threshold [mm] min: 0, default: 300, max: 10000
 - \b "~spatial_average_filter" : \b [bool] Spatial average filter min: False, default: False, max: True
 - \b "~spatial_median_filter" : \b [bool] Median filter min: False, default: False, max: True
-- \b "~min_amplitude_0" : \b [int] threshold minAmplitude 0 beam A LSB min: 0, default: 10, max: 2047
+- \b "~min_amplitude_0" : \b [int] threshold minAmplitude 0 beam A LSB min: 0, default: 0, max: 2047
 - \b "~min_amplitude_1" : \b [int] threshold minAmplitude 1 beam A LSB min: 0, default: 100, max: 2047
 - \b "~min_amplitude_2" : \b [int] threshold minAmplitude 2 beam A LSB min: 0, default: 200, max: 2047
 - \b "~min_amplitude_3" : \b [int] threshold minAmplitude 3 beam A LSB min: 0, default: 500, max: 2047

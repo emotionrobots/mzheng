@@ -778,7 +778,7 @@ espros_tof_cam635Config::GroupDescription<espros_tof_cam635Config::DEFAULT, espr
 //#line 291 "/opt/ros/noetic/lib/python3/dist-packages/dynamic_reconfigure/parameter_generator_catkin.py"
       __max__.min_amplitude_0 = 2047;
 //#line 291 "/opt/ros/noetic/lib/python3/dist-packages/dynamic_reconfigure/parameter_generator_catkin.py"
-      __default__.min_amplitude_0 = 10;
+      __default__.min_amplitude_0 = 0;
 //#line 291 "/opt/ros/noetic/lib/python3/dist-packages/dynamic_reconfigure/parameter_generator_catkin.py"
       Default.abstract_parameters.push_back(espros_tof_cam635Config::AbstractParamDescriptionConstPtr(new espros_tof_cam635Config::ParamDescription<int>("min_amplitude_0", "int", 0, "threshold minAmplitude 0 beam A LSB", "", &espros_tof_cam635Config::min_amplitude_0)));
 //#line 291 "/opt/ros/noetic/lib/python3/dist-packages/dynamic_reconfigure/parameter_generator_catkin.py"
