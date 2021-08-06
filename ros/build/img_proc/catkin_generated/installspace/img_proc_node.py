@@ -273,28 +273,40 @@ class ImgProcNode(object):
   #===================================================
   #  performs distance transform
   #===================================================
-  def segmentation(self, img):
+  def segmentation(self, img, original):
     img = img.astype('uint8')
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(9,9))
     open = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel, iterations=1)
-    cv2.imshow('circle open1', self.prepare(open,4))
     
+    sure_bg = cv2.dilate(img, kernel)
+
     dist = cv2.distanceTransform(open, cv2.DIST_L2, 3)
-    cv2.imshow('Distance Transform Image', self.prepare(dist,4))
     ret, sure_fg = cv2.threshold(dist,0.8*dist.max(),255,0)
-    #cv2.normalize(dist, dist, 0, 1.0, cv2.NORM_MINMAX)
-    cv2.imshow('Distance Transform Image - thresh', self.prepare(sure_fg,4))
+
+    sure_bg = sure_bg.astype('uint8')
+    sure_fg = sure_fg.astype('uint8')
+    unknown = cv2.subtract(sure_bg, sure_fg)
+
+    ret, markers = cv2.connectedComponents(sure_fg)
+    markers = markers + 1
+    markers[unknown==255] = 0
     
-    #return open
+    markers = cv.watershed(original,markers)
+    original[markers == -1] = [255,0,0]
+    cv2.imshow('original',self.prepare(original,4))
+    #return 
 
   #===================================================
   #  performs distance transform
   #===================================================
   def zpointNormalize(self, pixelValue):
+    if pixelValue < 0:
+      print('negative')
+      return 0
     x = int((255/(-2)*(pixelValue-2)))
     if x>255: 
       x=255
-    if x<0: 
+    elif x<0: 
       x=0
     return x
 
@@ -313,24 +325,15 @@ class ImgProcNode(object):
     #print(foreThresh)
 
     if zpoints is not None:
-      '''
-      cv2.imshow('aimg',self.prepare(aimg,4))
-      cv2.imshow('dimg',self.prepare(dimg,4))
-      dimg2 = (dimg/256).astype('uint8')
-      ret,depthThresh = cv2.threshold(dimg2,127,255,cv2.THRESH_BINARY)
-      '''
 
       metersTo8bit = np.vectorize(self.zpointNormalize)
       zpoint = metersTo8bit(zpoints[:]).astype('uint8')
-      cv2.imshow('zpoint', self.prepare(zpoint,4))
       ret, zpointThresh = cv2.threshold(zpoint, 10, 255, cv2.THRESH_BINARY)
-      #zpointThresh = self.morph_clean(zpointThresh)
       foreground = cv2.bitwise_and(zpointThresh, zpointThresh, mask = backgroundMask)
       foreground = self.morph_clean(foreground)
-      #cv2.imshow('zpointThresh', self.prepare(zpointThresh,4))
       cv2.imshow('foreground', self.prepare(foreground,4))
 
-      self.segmentation(foreground)
+      self.segmentation(foreground, aimg)
 
       #cv2.imshow('background',self.prepare(backgroundMask,4))
       #cv2.imshow('threshold', self.prepare(foreThresh,4))
