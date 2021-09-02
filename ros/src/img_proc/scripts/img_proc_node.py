@@ -291,21 +291,29 @@ class ImgProcNode(object):
     markers = markers + 1
     markers[unknown==255] = 0
 
+    tempMask = original.copy()
+    originalCopy = original.copy()
     original = cv2.cvtColor(original,cv2.COLOR_GRAY2BGR)
 
     markers = cv2.watershed(original.astype('uint8'),markers)
     print(np.unique(markers).size-2)
     original[markers == -1] = [0,0,255]
 
-    tempMask = original.copy()
-    for objectCOunt in np.unique(markers)[2:]:
-      
-      tempMask[markers == objectCount] = [255,255,255]
-      tempMask[markers != objectCOunt] = [0,0,0]
-      ctr, hierarchy = cv2.findContours(tempMask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-      cv.drawContour(tempMask, ctr, -1, (0,255,0), 3)
-      cv2.imshow('ctr', self.prepare(tempMask, 8))
+    
+    #cv2.imshow('ctr',self.prepare(tempMask,8))
+    for objectCount in np.unique(markers)[2:]:
 
+      tempMask[markers == objectCount] = 255
+      tempMask[markers != objectCount] = 0
+      
+      tempMask.astype('int8')
+      ctr, hierarchy = cv2.findContours(tempMask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+      
+      #cv2.imshow('ctr',self.prepare(tempMask,8))
+      
+      cv2.drawContour(originalCopy, ctr, -1, (0,255,0), 3)
+      cv2.imshow('ctr', self.prepare(originalCopy, 8))
+    
     cv2.imshow('original',self.prepare(original,8))
     
   #===================================================
