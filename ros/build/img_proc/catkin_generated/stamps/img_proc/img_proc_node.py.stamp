@@ -273,12 +273,12 @@ class ImgProcNode(object):
   #===================================================
   #  performs distance transform
   #===================================================
-  def segmentation(self, img, original):
-    img = img.astype('uint8')
+  def segmentation(self, fg, original, zpoint):
+    fg = fg.astype('uint8')
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(9,9))
-    open = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel, iterations=1)
+    open = cv2.morphologyEx(fg, cv2.MORPH_OPEN, kernel, iterations=1)
     
-    sure_bg = cv2.dilate(img, kernel)
+    sure_bg = cv2.dilate(fg, kernel)
 
     dist = cv2.distanceTransform(open, cv2.DIST_L2, 3)
     ret, sure_fg = cv2.threshold(dist,0.8*dist.max(),255,0)
@@ -290,12 +290,14 @@ class ImgProcNode(object):
     ret, markers = cv2.connectedComponents(sure_fg)
     markers = markers + 1
     markers[unknown==255] = 0
-    
-    markers = cv.watershed(original,markers)
-    original[markers == -1] = [255,0,0]
-    cv2.imshow('original',self.prepare(original,4))
-    #return 
 
+    original = cv2.cvtColor(original,cv2.COLOR_GRAY2BGR)
+
+    markers = cv2.watershed(original.astype('uint8'),markers)
+    cv2.imshow('markers', self.prepare(markers,8))
+    original[markers == -1] = [0,0,255]
+    cv2.imshow('original',self.prepare(original,8))
+    
   #===================================================
   #  performs distance transform
   #===================================================
@@ -333,7 +335,8 @@ class ImgProcNode(object):
       foreground = self.morph_clean(foreground)
       cv2.imshow('foreground', self.prepare(foreground,4))
 
-      self.segmentation(foreground, aimg)
+      self.segmentation(foreground, zpoint, zpoints)
+      #self.segmentation(foreground, dimg, zpoints)
 
       #cv2.imshow('background',self.prepare(backgroundMask,4))
       #cv2.imshow('threshold', self.prepare(foreThresh,4))
