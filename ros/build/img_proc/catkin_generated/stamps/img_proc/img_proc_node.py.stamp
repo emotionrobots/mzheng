@@ -40,6 +40,8 @@ import tf2_ros
 import tf2_py as tf2
 from tf2_sensor_msgs.tf2_sensor_msgs import do_transform_cloud
 import paho.mqtt.client as mqtt
+from BlobTracker import BlobTracker
+
 
 node = None
 client = mqtt.Client()
@@ -68,7 +70,7 @@ client.on_connect = on_connect
 client.on_message = on_message
 
 # uncomment this line!!!
-client.connect("pplcnt-mqtt.e-motion.ai")
+client.connect("mqtt://pplcnt-mqtt.e-motion.ai")
 
 class Message:
   def __init__(self, device, deviceid, longitude, latitude, location, datetime, time, day, month,
@@ -149,6 +151,10 @@ class ImgProcNode(object):
 
     #OpenCV Background Subtractor
     self.bgSubtractor = cv2.createBackgroundSubtractorMOG2(varThreshold = 2, detectShadows = False)
+
+    # blob tracker
+    self.tracker = BlobTracker()
+    self.enterExit = []
 
     # Subscribe to camera data 
     rospy.Subscriber('/espros_tof_cam635/camera/image_raw1', Image, self.amp_callback)
@@ -271,6 +277,20 @@ class ImgProcNode(object):
     return self.bgmask
 
   #===================================================
+  #  turns watershed into contour
+  #===================================================
+  def watershedToContour(self, empty, mask):
+    ctrList = []
+    for objectCount in np.unique(markers)[2:]:
+
+      tempMask[markers == objectCount] = 255
+      tempMask[markers != objectCount] = 0
+      
+      tempMask.astype('int8')
+      ctr, hierarchy = cv2.findContours(tempMask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+      ctrList.append(ctr)
+
+  #===================================================
   #  performs distance transform
   #===================================================
   def segmentation(self, fg, original, zpoint):
@@ -291,20 +311,14 @@ class ImgProcNode(object):
     markers = markers + 1
     markers[unknown==255] = 0
 
+    originalCopy = original.copy()
     original = cv2.cvtColor(original,cv2.COLOR_GRAY2BGR)
 
     markers = cv2.watershed(original.astype('uint8'),markers)
     print(np.unique(markers).size-2)
     original[markers == -1] = [0,0,255]
 
-    tempMask = original.copy()
-    for objectCOunt in np.unique(markers)[2:]:
-      
-      tempMask[markers == objectCount] = [255,255,255]
-      tempMask[markers != objectCOunt] = [0,0,0]
-      ctr, hierarchy = cv2.findContours(tempMask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-      cv.drawContour(tempMask, ctr, -1, (0,255,0), 3)
-      cv2.imshow('ctr', self.prepare(tempMask, 8))
+    self.watershedToContour(originalCopy, markers)
 
     cv2.imshow('original',self.prepare(original,8))
     
@@ -346,11 +360,15 @@ class ImgProcNode(object):
       cv2.imshow('foreground', self.prepare(foreground,4))
 
       self.segmentation(foreground, zpoint, zpoints)
-      #self.segmentation(foreground, dimg, zpoints)
 
-      #cv2.imshow('background',self.prepare(backgroundMask,4))
-      #cv2.imshow('threshold', self.prepare(foreThresh,4))
-      #self.segmentation(foreThresh)
+      self.tracker.cartNormal = 3.0 
+      self.tracker.alpha = 0.5  # dial go between shape vs dist matching   
+
+      ximg = self.camera['x']
+      yimg = self.camera['y']
+      zimg = self.camera['z']
+      # Pass current ximg, yimg, zimg to tracker
+      self.tracker.setPointCloud(ximg, yimg, zimg)
       
 
   #===================================================
