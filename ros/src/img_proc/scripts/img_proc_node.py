@@ -47,6 +47,7 @@ node = None
 client = mqtt.Client()
 
 def on_connect(client, userdata, flags, rc):
+    print("connected to server")
     client.subscribe("topic1")
 
 def on_message(client, userdata, msg):
@@ -69,8 +70,10 @@ def format(string):
 client.on_connect = on_connect
 client.on_message = on_message
 
+
 # uncomment this line!!!
-client.connect("mqtt://pplcnt-mqtt.e-motion.ai")
+client.connect("mqtt.e-motion.ai")
+
 
 class Message:
   def __init__(self, device, deviceid, longitude, latitude, location, datetime, time, day, month,
@@ -465,6 +468,8 @@ class ImgProcNode(object):
     dimg = self.camera['depth']
     aimg = self.camera['amp']
     zpoints = self.camera['z']
+
+    print('is running')
     
     backgroundMask = self.getBgMask(aimg)
     foreground = cv2.bitwise_and(aimg, aimg, mask = backgroundMask)
@@ -524,7 +529,7 @@ class ImgProcNode(object):
         print("people in frame", tracked_blobs)
         self.peopleInFrame = tracked_blobs
         print(m1.dictStr())
-        client.publish("topic1", m1.dictStr())
+        client.publish("topic1", json.dumps(m1.dictStr()))
         
     # tracking the number of people entering or exiting  
    
@@ -539,7 +544,7 @@ class ImgProcNode(object):
       dt, time, day, month, year, weekday = getDateTime(now)
       m1 = Message("rpi4", 16, 455, 566, "Store entrance", dt, time, day, month, year, weekday, peopleEntered, peopleExited)
       print(m1.dictStr())
-      client.publish("topic1", m1.dictStr())
+      client.publish("topic1", json.dumps(m1.dictStr()))
 
   #===================================================
   #  Start processing 

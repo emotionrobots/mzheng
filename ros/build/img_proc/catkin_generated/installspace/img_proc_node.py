@@ -290,6 +290,8 @@ class ImgProcNode(object):
       ctr, hierarchy = cv2.findContours(tempMask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
       ctrList.append(ctr)
 
+    return ctrList
+
   #===================================================
   #  performs distance transform
   #===================================================
@@ -318,9 +320,9 @@ class ImgProcNode(object):
     print(np.unique(markers).size-2)
     original[markers == -1] = [0,0,255]
 
-    self.watershedToContour(originalCopy, markers)
+    cntList = self.watershedToContour(originalCopy, markers)
 
-    cv2.imshow('original',self.prepare(original,8))
+    return cntList
     
   #===================================================
   #  performs distance transform
@@ -335,6 +337,126 @@ class ImgProcNode(object):
     elif x<0: 
       x=0
     return x
+
+  #===================================================
+  #  Distance score based on normalized distanceScore
+  #===================================================	
+  def distanceScore(self, ax, ay, bx, by):
+    # dividing by the actual size of frame normalizes the value (between 0 and 1)
+    dx = (ax - bx) / 160.0
+    dy = (ay - by) / 60.0
+    dist = math.sqrt(dx*dx + dy*dy)
+    return dist
+  
+  #===================================================
+  #  Finding x and y of centroid
+  #===================================================  
+  def findCenter(self, blob):
+    m = cv2.moments(blob)
+    if m['m00'] != 0:
+      bx = int(m['m10']/m['m00'])
+      by = int(m['m01']/m['m00'])
+    else:
+      print("illegitimate blob")
+      bx = 0
+      by = 0
+    return bx, by
+    
+  #===================================================
+  #  Create list of all possible matches (relationships)
+  #  along with score based on similarity of shape and
+  #  distance between centers
+  #===================================================
+  def findRelationships(self, frame1_blobs, frame2_blobs):
+    relationship = []
+    alpha = self.alpha
+    for i in range(len(frame1_blobs)):
+      for j in range(len(frame2_blobs)):
+        blob_a = frame1_blobs[i]
+        blob_b = frame2_blobs[j]
+        # hu moment score, how similar the shape is to the other
+        # lower number is better
+        hm_score = cv2.matchShapes(blob_a, blob_b, 1, 0.0)
+        ax, ay = self.findCenter(blob_a)
+        bx, by = self.findCenter(blob_b)
+        dist_score = self.distanceScore(ax, ay, bx, by)
+        score = alpha*hm_score + (1-alpha)*dist_score
+        relationship.append((i,j,score))
+    return relationship
+    
+  #===================================================
+  #  Given a set of potential matches (relationship),
+  #  find the best match
+  #===================================================
+  def findBestMatch(self, relationship):
+    blob_a = -1
+    blob_b = -1
+    minScore = 0
+    for k in range(len(relationship)):
+      (i, j, score) = relationship[k]
+      if k == 0:
+        minScore = score
+        blob_a = i
+        blob_b = j
+      else:
+        # checking if new score is lower than minScore,
+        # meaning a more accurate match
+        if score < minScore:
+          minScore = score
+          blob_a = i
+          blob_b = j
+    return blob_a, blob_b, minScore
+    
+  #===================================================
+  #  Remove any relationships involving blob_a or blob_b
+  #===================================================
+  def removeRelationships(self, blob_a, blob_b, relationship):
+    new_relationship = []
+    for k in range(len(relationship)):
+      (i, j, score) = relationship[k]
+      if i != blob_a and j != blob_b:
+        new_relationship.append((i, j, score))
+    return new_relationship
+    
+  #===================================================
+  #  Find the matches between blobs in frame 1 and 2 by:
+  #
+  #    1. Find all possible matches and their scores
+  # 
+  #    2. Find the best match and remove the matched
+  #       pair of blobs from the list for further consideration
+  # 
+  #    3. Repeat 2 until nothing left on the list to consider
+  #
+  #  Function returns all the matches and the remaining
+  #  unmatched relationships
+  #===================================================
+  def match(self, frame1_blobs, frame2_blobs):
+    matches = []
+    remains = self.findRelationships(frame1_blobs, frame2_blobs)
+    while len(remains) != 0:
+      (blob_a, blob_b, score) = self.findBestMatch(remains)
+      if blob_a != -1:
+        matches.append((blob_a, blob_b, score))
+        remains = self.removeRelationships(blob_a, blob_b, remains)
+    return matches, remains
+    
+  #===================================================
+  #  Periodic call to publish data 
+  #===================================================
+  def enterOrExit(self, unmatched_tracked):
+    peopleEntering = 0
+    peopleExiting = 0
+    
+    for (i, blob) in unmatched_tracked:
+     x, y = self.findCenter(blob)
+     print('blob center', x, y)
+     if abs(x - self.entering) <= self.error:
+        peopleEntering += 1
+     elif abs(x - self.exiting) <= self.error:
+        peopleExiting += 1
+    # print('people entering', peopleEntering, 'people exiting', peopleExiting)
+    return peopleEntering, peopleExiting
 
   #===================================================
   #  Periodic call to refresh image and compute fg&bg and such
@@ -359,7 +481,7 @@ class ImgProcNode(object):
       foreground = self.morph_clean(foreground)
       cv2.imshow('foreground', self.prepare(foreground,4))
 
-      self.segmentation(foreground, zpoint, zpoints)
+      blobs = self.segmentation(foreground, zpoint, zpoints)
 
       self.tracker.cartNormal = 3.0 
       self.tracker.alpha = 0.5  # dial go between shape vs dist matching   
@@ -370,6 +492,54 @@ class ImgProcNode(object):
       # Pass current ximg, yimg, zimg to tracker
       self.tracker.setPointCloud(ximg, yimg, zimg)
       
+      # Update tracker
+      self.tracker.update(blobs)
+      
+      trail = (aimg/16).astype('uint8')
+      trail = cv2.cvtColor(trail, cv2.COLOR_GRAY2RGB)
+      trail = cv2.line(trail,(25,0),(25,60),(0,0,255),2)
+      trail = cv2.line(trail,(135,0),(135,60),(0,0,255),2)
+      # Updated result is in tracker.tracked, which is an array of deque
+      for i in range(len(self.tracker.tracked)):
+        if len(self.tracker.tracked[i]) > 0:
+          # Get the deque
+          q = self.tracker.tracked[i]
+          x = -1
+          y = -1
+          # draw trail
+          for j in q:
+            if x > -1 and y > -1:
+              cv2.line(trail, self.findCenter(j), (x, y), (0,0,255), 2)
+            x, y = self.findCenter(j)
+            
+      cv2.imshow("trail", self.prepare(trail, 4))
+    
+    now = datetime.now()
+    # counting the number of people in frame
+    if self.countInFrame:
+      tracked_blobs = len(self.tracker.matchedPairs)
+      if tracked_blobs != self.peopleInFrame:
+        dt, time, day, month, year, weekday = getDateTime(now)
+        m1 = Message("rpi4", 16, 455, 566, "Store entrance", dt, time, day, month, year, weekday, 			      tracked_blobs, tracked_blobs)
+        print("people in frame", tracked_blobs)
+        self.peopleInFrame = tracked_blobs
+        print(m1.dictStr())
+        client.publish("topic1", json.dumps(m1.dictStr()))
+        
+    # tracking the number of people entering or exiting  
+   
+    elif self.tracker.change == True:
+      print('number of blobs tracked', len(self.tracker.unmatched_tracked))
+      for j in self.tracker.unmatched_tracked:
+        # print(self.findCenter(j))
+        pass
+      peopleEntered = self.tracker.currentEnter
+      peopleExited = self.tracker.currentExit
+      # device, deviceid, longtitude, latitude, location, time, enter, exit, people in 		building
+      dt, time, day, month, year, weekday = getDateTime(now)
+      m1 = Message("rpi4", 16, 455, 566, "Store entrance", dt, time, day, month, year, weekday, peopleEntered, peopleExited)
+      print(m1.dictStr())
+      client.publish("topic1", json.dumps(m1.dictStr()))
 
   #===================================================
   #  Start processing 
