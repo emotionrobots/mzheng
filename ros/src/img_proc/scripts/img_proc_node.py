@@ -282,7 +282,7 @@ class ImgProcNode(object):
   #===================================================
   #  turns watershed into contour
   #===================================================
-  def watershedToContour(self, empty, mask):
+  def watershedToContour(self, tempMask, markers):
     ctrList = []
     for objectCount in np.unique(markers)[2:]:
 
@@ -291,7 +291,8 @@ class ImgProcNode(object):
       
       tempMask.astype('int8')
       ctr, hierarchy = cv2.findContours(tempMask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-      ctrList.append(ctr)
+      for cnt in ctr:
+        ctrList.append(cnt)
 
     return ctrList
 
@@ -469,7 +470,7 @@ class ImgProcNode(object):
     aimg = self.camera['amp']
     zpoints = self.camera['z']
 
-    print('is running')
+    print('periodic is running')
     
     backgroundMask = self.getBgMask(aimg)
     foreground = cv2.bitwise_and(aimg, aimg, mask = backgroundMask)
@@ -498,7 +499,7 @@ class ImgProcNode(object):
       self.tracker.setPointCloud(ximg, yimg, zimg)
       
       # Update tracker
-      self.tracker.update(blobs)
+      self.tracker.update(np.array(blobs))
       
       trail = (aimg/16).astype('uint8')
       trail = cv2.cvtColor(trail, cv2.COLOR_GRAY2RGB)
@@ -511,15 +512,18 @@ class ImgProcNode(object):
           q = self.tracker.tracked[i]
           x = -1
           y = -1
+          
           # draw trail
           for j in q:
             if x > -1 and y > -1:
               cv2.line(trail, self.findCenter(j), (x, y), (0,0,255), 2)
             x, y = self.findCenter(j)
+          
             
       cv2.imshow("trail", self.prepare(trail, 4))
     
     now = datetime.now()
+    '''
     # counting the number of people in frame
     if self.countInFrame:
       tracked_blobs = len(self.tracker.matchedPairs)
@@ -530,10 +534,11 @@ class ImgProcNode(object):
         self.peopleInFrame = tracked_blobs
         print(m1.dictStr())
         client.publish("topic1", json.dumps(m1.dictStr()))
+    '''
         
     # tracking the number of people entering or exiting  
    
-    elif self.tracker.change == True:
+    if self.tracker.change == True:
       print('number of blobs tracked', len(self.tracker.unmatched_tracked))
       for j in self.tracker.unmatched_tracked:
         # print(self.findCenter(j))
@@ -545,6 +550,7 @@ class ImgProcNode(object):
       m1 = Message("rpi4", 16, 455, 566, "Store entrance", dt, time, day, month, year, weekday, peopleEntered, peopleExited)
       print(m1.dictStr())
       client.publish("topic1", json.dumps(m1.dictStr()))
+      print(m1.dictStr())
 
   #===================================================
   #  Start processing 
