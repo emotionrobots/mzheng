@@ -291,7 +291,7 @@ class ImgProcNode(object):
       
       tempMask.astype('int8')
       ctr, hierarchy = cv2.findContours(tempMask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-      fot cnt in ctr:
+      for cnt in ctr:
         ctrList.append(cnt)
 
     return ctrList
@@ -512,15 +512,15 @@ class ImgProcNode(object):
           q = self.tracker.tracked[i]
           x = -1
           y = -1
-          '''
+          
           # draw trail
           for j in q:
             if x > -1 and y > -1:
               cv2.line(trail, self.findCenter(j), (x, y), (0,0,255), 2)
             x, y = self.findCenter(j)
-          '''
+          
             
-      #cv2.imshow("trail", self.prepare(trail, 4))
+      cv2.imshow("trail", self.prepare(trail, 4))
     
     now = datetime.now()
     '''
@@ -550,6 +550,7 @@ class ImgProcNode(object):
       m1 = Message("rpi4", 16, 455, 566, "Store entrance", dt, time, day, month, year, weekday, peopleEntered, peopleExited)
       print(m1.dictStr())
       client.publish("topic1", json.dumps(m1.dictStr()))
+      print(m1.dictStr())
 
   #===================================================
   #  Start processing 

@@ -48,24 +48,28 @@ client = mqtt.Client()
 
 def on_connect(client, userdata, flags, rc):
     print("connected to server")
-    client.subscribe("topic1")
+    client.subscribe("preserve")
 
 def on_message(client, userdata, msg):
     print("Message received-> " + msg.topic + " " + str(msg.payload))
     
 def getDateTime(now):
-    datetime = now.strftime("%Y/%m/%d %H")
+    datetime = now.strftime("%Y/%m/%d %H:%M:%S")
+    '''
     time = format(now.strftime("%H"))
     day = format(now.strftime("%d"))
     month = format(now.strftime("%m"))
     year = now.strftime("%Y")
     weekday = now.strftime("%w")
-    return datetime, time, day, month, year, weekday
+    '''
+    return datetime #, time, day, month, year, weekday
     
+'''
 def format(string):
     if string[0] == "0":
       return string[1:]
     return string
+'''
 
 client.on_connect = on_connect
 client.on_message = on_message
@@ -76,19 +80,18 @@ client.connect("mqtt.e-motion.ai")
 
 
 class Message:
-  def __init__(self, device, deviceid, longitude, latitude, location, datetime, time, day, month,
-               year, weekday, enter, exit):
+  def __init__(self, device, deviceid, location, datetime, enter, exit):
     self.device = device
     self.deviceid = deviceid
-    self.longitude = longitude
-    self.latitude = latitude
+    #self.longitude = longitude
+    #self.latitude = latitude
     self.location = location
     self.datetime = datetime
-    self.time = time
-    self.day = day
-    self.month = month
-    self.year = year
-    self.weekday = weekday
+    #self.time = time
+    #self.day = day
+    #self.month = month
+    #self.year = year
+    #self.weekday = weekday
     self.enter = enter
     self.exit = exit
 
@@ -96,15 +99,15 @@ class Message:
     d = {}
     d["device"] = self.device
     d["deviceid"] = self.deviceid
-    d["longitude"] = self.longitude
-    d["latitude"] = self.latitude
+   #d["longitude"] = self.longitude
+   #d["latitude"] = self.latitude
     d["location"] = self.location
     d["datetime"] = self.datetime
-    d["time"] = self.time
-    d["day"] = self.day
-    d["month"] = self.month
-    d["year"] = self.year
-    d["weekday"] = self.weekday
+    #d["time"] = self.time
+    #d["day"] = self.day
+    #d["month"] = self.month
+    #d["year"] = self.year
+    #d["weekday"] = self.weekday
     d["enter"] = self.enter
     d["exit"] = self.exit
     return json.dumps(d)
@@ -321,7 +324,7 @@ class ImgProcNode(object):
     original = cv2.cvtColor(original,cv2.COLOR_GRAY2BGR)
 
     markers = cv2.watershed(original.astype('uint8'),markers)
-    print(np.unique(markers).size-2)
+    #print(np.unique(markers).size-2)
     original[markers == -1] = [0,0,255]
 
     cntList = self.watershedToContour(originalCopy, markers)
@@ -361,7 +364,7 @@ class ImgProcNode(object):
       bx = int(m['m10']/m['m00'])
       by = int(m['m01']/m['m00'])
     else:
-      print("illegitimate blob")
+      print("illegitimate blob - img_proc_node")
       bx = 0
       by = 0
     return bx, by
@@ -470,7 +473,8 @@ class ImgProcNode(object):
     aimg = self.camera['amp']
     zpoints = self.camera['z']
 
-    print('periodic is running')
+    client.publish("presence", json.dumps("periodic is running"))
+    #print('periodic is running')
     
     backgroundMask = self.getBgMask(aimg)
     foreground = cv2.bitwise_and(aimg, aimg, mask = backgroundMask)
@@ -485,6 +489,7 @@ class ImgProcNode(object):
       ret, zpointThresh = cv2.threshold(zpoint, 10, 255, cv2.THRESH_BINARY)
       foreground = cv2.bitwise_and(zpointThresh, zpointThresh, mask = backgroundMask)
       foreground = self.morph_clean(foreground)
+      cv2.imshow('aimg', self.prepare(aimg,4))
       cv2.imshow('foreground', self.prepare(foreground,4))
 
       blobs = self.segmentation(foreground, zpoint, zpoints)
@@ -546,11 +551,12 @@ class ImgProcNode(object):
       peopleEntered = self.tracker.currentEnter
       peopleExited = self.tracker.currentExit
       # device, deviceid, longtitude, latitude, location, time, enter, exit, people in 		building
-      dt, time, day, month, year, weekday = getDateTime(now)
-      m1 = Message("rpi4", 16, 455, 566, "Store entrance", dt, time, day, month, year, weekday, peopleEntered, peopleExited)
-      print(m1.dictStr())
-      client.publish("topic1", json.dumps(m1.dictStr()))
-      print(m1.dictStr())
+      dt = getDateTime(now)
+      if not (peopleEntered == 0 and peopleExited == 0):
+        m1 = Message("rpi4", 16, "Store entrance", dt, peopleEntered, peopleExited)
+  
+        client.publish("presence", json.dumps(m1.dictStr()))
+        print(m1.dictStr())
 
   #===================================================
   #  Start processing 

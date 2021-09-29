@@ -38,6 +38,10 @@ class BlobTracker(Tracker):
     self.height = height 
     self.cartNormal = 2.0  # Set to dstance in meter  
 
+    self.lastm00 = None
+    self.lastm01 = None
+    self.lastm10 = None
+
   #--------------------------------------------------------
   #  Returns contour center as (x, y) tuple
   #--------------------------------------------------------
@@ -51,9 +55,17 @@ class BlobTracker(Tracker):
   #--------------------------------------------------------
   def getCenter(self, a):
     M = cv2.moments(a)
+    print( M['m10'],M['m00'],M['m01'])
     
-    x = M['m10']/M['m00']
-    y = M['m01']/M['m00']
+    if M['m00'] == 0 and M['m10'] == 0 and M['m01'] == 0:
+      x = self.lastm10/self.lastm00
+      y = self.lastm01/self.lastm00
+    else:
+      x = M['m10']/M['m00']
+      y = M['m01']/M['m00']
+    self.lastm00 = M['m00']
+    self.lastm01 = M['m01']
+    self.lastm10 = M['m10']
     return (int(x), int(y))
     
 
@@ -207,7 +219,7 @@ class BlobTracker(Tracker):
       bx = int(m['m10']/m['m00'])
       by = int(m['m01']/m['m00'])
     else:
-      print("illegitimate blob")
+      print("illegitimate blob - BlobTracker")
       bx = 0
       by = 0
     return bx, by

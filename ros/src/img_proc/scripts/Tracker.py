@@ -223,6 +223,7 @@ class Tracker(Matcher):
   #--------------------------------------------------------
   def getCenter(self, a):
     M = cv2.moments(a)
+    print(M)
     x = M['m10']/M['m00']
     y = M['m01']/M['m00']
     return (x, y)
